@@ -17,7 +17,7 @@ export const mastra = new Mastra({
     name: 'Mastra',
     level: 'info',
   }),
-    telemetry: {
+  telemetry: {
     serviceName: "ai", // this must be set to "ai" so that the LangfuseExporter thinks it's an AI SDK trace
     enabled: true,
     export: {
@@ -29,4 +29,30 @@ export const mastra = new Mastra({
       }),
     },
   },
+  server: {
+    cors: {
+      origin: ["*"],
+      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowHeaders: ["Content-Type", "Authorization"],
+      credentials: false,
+    },
+    middleware: [
+      {
+        handler: async (c, next) => {
+        // Example: Add authentication check
+        const authHeader = c.req.header("Authorization");
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return new Response('Unauthorized', { status: 401 });
+        }
+        const token = authHeader.substring(7);
+        const validApiKey = process.env.BEARER_KEY || 'your-secret-api-key';
+        if (token !== validApiKey) {
+        return new Response('Invalid token', { status: 401 });
+        }
+        await next();
+        },
+        path: "/api/*",
+      },
+    ]
+  }
 });
