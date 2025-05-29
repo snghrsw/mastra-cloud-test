@@ -50,6 +50,7 @@ const agent = new Agent({
         - Keep descriptions concise but informative
 
         Maintain this exact formatting for consistency, using the emoji and section headers as shown.
+        必ず日本語で教えてください
       `,
 });
 
