@@ -30,16 +30,15 @@ export const mastra = new Mastra({
     },
   },
   server: {
-    cors: {
-      origin: ["*"],
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowHeaders: ["Content-Type", "Authorization"],
-      credentials: false,
-    },
     middleware: [
       {
         handler: async (c, next) => {
-        // Example: Add authentication check
+        const isFromMastraCloud = c.req.header('x-mastra-cloud') === 'true';
+        const isDevPlayground = c.req.header('x-mastra-dev-playground') === 'true'
+        if(isFromMastraCloud || isDevPlayground) {
+          await next();
+        }
+
         const authHeader = c.req.header("Authorization");
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
           return new Response('Unauthorized', { status: 401 });

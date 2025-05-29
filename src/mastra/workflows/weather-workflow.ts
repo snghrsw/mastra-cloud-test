@@ -85,6 +85,62 @@ function getWeatherCondition(code: number): string {
   return conditions[code] || 'Unknown';
 }
 
+// モックデータを生成する関数
+const generateMockGeocodingData = (city: string) => {
+  // 一般的な都市のモックデータ
+  const mockCities: Record<string, { latitude: number; longitude: number; name: string }> = {
+    tokyo: { latitude: 35.6762, longitude: 139.6503, name: 'Tokyo' },
+    osaka: { latitude: 34.6937, longitude: 135.5023, name: 'Osaka' },
+    kyoto: { latitude: 35.0116, longitude: 135.7681, name: 'Kyoto' },
+    london: { latitude: 51.5074, longitude: -0.1278, name: 'London' },
+    newyork: { latitude: 40.7128, longitude: -74.0060, name: 'New York' },
+    paris: { latitude: 48.8566, longitude: 2.3522, name: 'Paris' },
+  };
+
+  const cityLower = city.toLowerCase().replace(/\s+/g, '');
+  const matchedCity = mockCities[cityLower] || {
+    latitude: 35.6762 + (Math.random() - 0.5) * 10,
+    longitude: 139.6503 + (Math.random() - 0.5) * 10,
+    name: city,
+  };
+
+  return {
+    results: [matchedCity],
+  };
+};
+
+// モック天気データを生成する関数
+const generateMockWeatherData = () => {
+  const currentHour = new Date().getHours();
+  const temperatures = Array.from({ length: 24 }, (_, i) => {
+    // 気温の日変化をシミュレート（朝は低く、昼は高い）
+    const hour = (currentHour + i) % 24;
+    const baseTemp = 20;
+    const variation = Math.sin((hour - 6) * Math.PI / 12) * 10;
+    const randomness = (Math.random() - 0.5) * 3;
+    return baseTemp + variation + randomness;
+  });
+
+  const precipitationProbabilities = Array.from({ length: 24 }, () => 
+    Math.floor(Math.random() * 100)
+  );
+
+  const weatherCodes = [0, 1, 2, 3, 51, 61, 71];
+  const randomWeatherCode = weatherCodes[Math.floor(Math.random() * weatherCodes.length)];
+
+  return {
+    current: {
+      time: new Date().toISOString(),
+      precipitation: Math.random() * 10,
+      weathercode: randomWeatherCode,
+    },
+    hourly: {
+      precipitation_probability: precipitationProbabilities,
+      temperature_2m: temperatures,
+    },
+  };
+};
+
 const fetchWeather = createStep({
   id: 'fetch-weather',
   description: 'Fetches weather forecast for a given city',
@@ -97,11 +153,11 @@ const fetchWeather = createStep({
       throw new Error('Input data not found');
     }
 
-    const geocodingUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(inputData.city)}&count=1`;
-    const geocodingResponse = await fetch(geocodingUrl);
-    const geocodingData = (await geocodingResponse.json()) as {
-      results: { latitude: number; longitude: number; name: string }[];
-    };
+    // モック用の遅延を追加（実際のAPIコールをシミュレート）
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Geocoding APIのモック
+    const geocodingData = generateMockGeocodingData(inputData.city);
 
     if (!geocodingData.results?.[0]) {
       throw new Error(`Location '${inputData.city}' not found`);
@@ -109,19 +165,9 @@ const fetchWeather = createStep({
 
     const { latitude, longitude, name } = geocodingData.results[0];
 
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=precipitation,weathercode&timezone=auto,&hourly=precipitation_probability,temperature_2m`;
-    const response = await fetch(weatherUrl);
-    const data = (await response.json()) as {
-      current: {
-        time: string;
-        precipitation: number;
-        weathercode: number;
-      };
-      hourly: {
-        precipitation_probability: number[];
-        temperature_2m: number[];
-      };
-    };
+    // Weather APIのモック
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const data = generateMockWeatherData();
 
     const forecast = {
       date: new Date().toISOString(),
@@ -132,7 +178,7 @@ const fetchWeather = createStep({
         (acc, curr) => Math.max(acc, curr),
         0,
       ),
-      location: "",
+      location: name,
     };
 
     return forecast;
