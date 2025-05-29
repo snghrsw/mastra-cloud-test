@@ -1,8 +1,14 @@
-import { openai } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import { weatherTool } from '../tools/weather-tool';
+import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
+
+const bedrock = createAmazonBedrock({
+  region: 'us-east-1',
+  accessKeyId: process.env.ACCESS_KEY_ID,
+  secretAccessKey: process.env.SECRET_ACCESS_KEY,
+});
 
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
@@ -17,8 +23,9 @@ export const weatherAgent = new Agent({
       - Keep responses concise but informative
 
       Use the weatherTool to fetch current weather data.
+      必ず日本語で返信してください
 `,
-  model: openai('gpt-4o-mini'),
+  model: bedrock('us.anthropic.claude-3-7-sonnet-20250219-v1:0'),
   tools: { weatherTool },
   memory: new Memory({
     storage: new LibSQLStore({
