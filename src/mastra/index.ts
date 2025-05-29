@@ -10,7 +10,6 @@ export const mastra = new Mastra({
   workflows: { weatherWorkflow },
   agents: { weatherAgent },
   storage: new LibSQLStore({
-    // stores telemetry, evals, ... into memory storage, if it needs to persist, change to file:../mastra.db
     url: ":memory:",
   }),
   logger: new PinoLogger({
@@ -18,7 +17,7 @@ export const mastra = new Mastra({
     level: 'info',
   }),
   telemetry: {
-    serviceName: "ai", // this must be set to "ai" so that the LangfuseExporter thinks it's an AI SDK trace
+    serviceName: "ai",
     enabled: true,
     export: {
       type: "custom",
@@ -37,6 +36,7 @@ export const mastra = new Mastra({
         const isDevPlayground = c.req.header('x-mastra-dev-playground') === 'true'
         if(isFromMastraCloud || isDevPlayground) {
           await next();
+          return;
         }
 
         const authHeader = c.req.header("Authorization");
